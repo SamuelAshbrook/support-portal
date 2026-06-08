@@ -10,6 +10,92 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
+model Company {
+  id        String      @id @default(cuid())
+  name      String
+
+  users     User[]
+  tickets   Ticket[]
+  timesheets Timesheet[]
+
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String?
+  email     String   @unique
+
+  role      Role      @default(CLIENT)
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  tickets   Ticket[]
+  messages  TicketMessage[]
+  uploadedTimesheets Timesheet[] @relation("UploadedTimesheets")
+
+  createdAt DateTime @default(now())
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+
+  status      TicketStatus @default(OPEN)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  messages    TicketMessage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TicketMessage {
+  id      String      @id @default(cuid())
+  content String
+
+  ticketId String
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
+  senderId String
+  sender   User @relation(fields: [senderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Timesheet {
+  id    String      @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  workDate DateTime
+  hours    Decimal
+  notes    String?
+
+  uploadedById String
+  uploadedBy   User @relation("UploadedTimesheets", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  ARCHIVED
+}
