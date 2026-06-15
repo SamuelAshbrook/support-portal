@@ -1,3 +1,4 @@
+// Creating a cached singleton for Prisma
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
