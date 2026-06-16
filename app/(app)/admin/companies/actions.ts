@@ -3,14 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
-import { auth } from "@/app/lib/auth";
-
-async function assertAdmin() {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || session.user.role !== "ADMIN") {
-        throw new Error("Unauthorized");
-    }
-}
+import { assertAdmin } from "@/app/lib/session";
 
 export async function createCompany(formData: FormData) {
     await assertAdmin();
