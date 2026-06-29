@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
