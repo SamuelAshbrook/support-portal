@@ -39,6 +39,7 @@ export default async function AppLayout({
                         </svg>
                     </Link>
                 </div>
+                <Link href="/tickets" className="text-white hover:text-gray-300">Tickets</Link>
                 {session.user.role === "ADMIN" && (
                     <a href="/admin/companies" className="text-white hover:text-gray-300">Companies</a>
                 )}
