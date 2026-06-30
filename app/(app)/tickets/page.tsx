@@ -2,6 +2,7 @@ import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
 import { createTicket } from "./actions";
+import { formatCreatedAgo, formatTicketDate } from "@/app/lib/format-date";
 
 export default async function TicketsPage() {
     const user = await requireUser();
@@ -40,6 +41,7 @@ export default async function TicketsPage() {
             <ul className="divide-y divide-zinc-200">
                 {tickets.map((ticket) => (
                 <li key={ticket.id} className="p-4">
+                    #{ticket.ticketNumber}
                     <Link
                     href={`/tickets/${ticket.id}`}
                     className="font-medium hover:underline"
@@ -47,9 +49,10 @@ export default async function TicketsPage() {
                     {ticket.title}
                     </Link>
                     <div className="text-sm text-zinc-500">
-                    {ticket.status}
-                    {isAdmin && ` · ${ticket.company.name}`}
-                    {` · ${ticket._count.messages} messages`}
+                        {ticket.createdBy.name ?? ticket.createdBy.email}
+                        {ticket.company.name}
+                        {formatCreatedAgo(ticket.createdAt)}
+                        {formatTicketDate(ticket.createdAt)}
                     </div>
                 </li>
                 ))}
