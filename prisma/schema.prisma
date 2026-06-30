@@ -49,9 +49,10 @@ model User {
 }
 
 model Ticket {
-  id          String    @id @default(cuid())
-  title       String
-  description String
+  id            String    @id @default(cuid())
+  ticketNumber  Int       @unique @default(autoincrement())
+  title         String
+  description   String
 
   status      TicketStatus @default(OPEN)
 
