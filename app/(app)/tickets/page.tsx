@@ -3,6 +3,9 @@ import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
 import { createTicket } from "./actions";
 import { formatCreatedAgo, formatTicketDate } from "@/app/lib/format-date";
+import { User, Building2, Clock, Calendar } from 'lucide-react';
+import { formatExcerpt } from "@/app/lib/format-excerpt";
+import { getTicketStatusDisplay } from "@/app/lib/ticket-status";
 
 export default async function TicketsPage() {
     const user = await requireUser();
@@ -38,24 +41,52 @@ export default async function TicketsPage() {
                 </form>
             )}
 
-            <ul className="divide-y divide-zinc-200">
-                {tickets.map((ticket) => (
-                <li key={ticket.id} className="p-4">
-                    #{ticket.ticketNumber}
-                    <Link
-                    href={`/tickets/${ticket.id}`}
-                    className="font-medium hover:underline"
-                    >
-                    {ticket.title}
-                    </Link>
-                    <div className="text-sm text-zinc-500">
-                        {ticket.createdBy.name ?? ticket.createdBy.email}
-                        {ticket.company.name}
-                        {formatCreatedAgo(ticket.createdAt)}
-                        {formatTicketDate(ticket.createdAt)}
-                    </div>
-                </li>
-                ))}
+            <ul className="flex flex-col gap-4 divide-y divide-zinc-200">
+                {tickets.map((ticket) => {
+                    const statusDisplay = getTicketStatusDisplay(ticket.status);
+                    return (
+                        <li key={ticket.id} className="rounded-lg bg-white shadow-sm transition-colors border border-[#e3e5e8]">
+                            <Link
+                                href={`/tickets/${ticket.id}`}
+                                className="w-full h-full cursor-pointer block p-4"
+                            >
+                                <div className="flex justify-between">
+                                    <div className="flex gap-2">
+                                        #{ticket.ticketNumber}
+                                        <h3 className="text-base font-medium">{ticket.title}</h3>
+                                    </div>
+                                    <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-cs font-medium ${statusDisplay.className}`}>
+                                        {statusDisplay.label}
+                                    </div>
+                                </div>
+                                <div className="text-sm text-zinc-500 mt-1">
+                                    {formatExcerpt(ticket.description)}
+                                </div>
+                                <div className="flex gap-2 text-sm text-zinc-500 mt-3">
+                                    <div className="flex items-center gap-1">
+                                        <User className="size-4" />
+                                        {ticket.createdBy.name ?? ticket.createdBy.email}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Building2 className="size-4" />
+                                        {ticket.company.name}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Clock className="size-4" />
+                                        {formatCreatedAgo(ticket.createdAt)}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Calendar className="size-4" />
+                                        {formatTicketDate(ticket.createdAt)}
+                                    </div>
+                                </div>
+                            </Link>
+                        </li>
+                    )}
+                )}
             </ul>
         </div>
     );
