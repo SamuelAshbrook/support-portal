@@ -55,7 +55,7 @@ export default async function TicketsPage() {
                                         #{ticket.ticketNumber}
                                         <h3 className="text-base font-medium">{ticket.title}</h3>
                                     </div>
-                                    <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-cs font-medium ${statusDisplay.className}`}>
+                                    <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusDisplay.className}`}>
                                         {statusDisplay.label}
                                     </div>
                                 </div>
