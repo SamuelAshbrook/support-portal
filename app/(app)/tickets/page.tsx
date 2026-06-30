@@ -1,11 +1,11 @@
 import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
-import { createTicket } from "./actions";
 import { formatCreatedAgo, formatTicketDate } from "@/app/lib/format-date";
 import { User, Building2, Clock, Calendar } from 'lucide-react';
 import { formatExcerpt } from "@/app/lib/format-excerpt";
 import { getTicketStatusDisplay } from "@/app/lib/ticket-status";
+import { CreateTicketForm } from "./create-ticket-form";
 
 export default async function TicketsPage() {
     const user = await requireUser();
@@ -25,21 +25,7 @@ export default async function TicketsPage() {
         <div className="space-y-4 p-6">
             <h1 className="text-2xl font-bold">Tickets</h1>
 
-            { ! isAdmin && (
-                <form action={createTicket} className="grid max-w-md gap-2">
-                    <input 
-                        name="title" 
-                        placeholder="Title"
-                        className="w-full rounded-md border border-zinc-300 p-2"
-                    />
-                    <textarea
-                        name="description"
-                        placeholder="Describe the issue"
-                        className="w-full rounded-md border border-zinc-300 p-2"
-                    />
-                    <button className="w-full rounded-md bg-blue-500 text-white p-2">Create Ticket</button>
-                </form>
-            )}
+            {!isAdmin && <CreateTicketForm />}
 
             <ul className="flex flex-col gap-4 divide-y divide-zinc-200">
                 {tickets.map((ticket) => {
