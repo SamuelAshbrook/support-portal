@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
-import { TicketStatus } from "@/app/generated/prisma/client";
+import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
 
 const MAX_TITLE = 200;
@@ -38,12 +38,23 @@ export async function createTicket(
         return { error: `Title must be ${MAX_TITLE} characters or less` };
     if (description.length > MAX_DESCRIPTION)
         return { error: `Description must be ${MAX_DESCRIPTION} characters or less` };
+
+    const type = String(formData.get("type"));
+    const priority = String(formData.get("priority"));
+
+    if(!Object.values(TicketType).includes(type as TicketType))
+        return { error: "Invalid ticket type" };
+
+    if(!Object.values(TicketPriority).includes(priority as TicketPriority))
+        return { error: "Invalid ticket priority" };
     
     try {
         await prisma.ticket.create({
             data: {
                 title,
                 description,
+                type: type as TicketType,
+                priority: priority as TicketPriority,
                 companyId: user.companyId,
                 createdById: user.id,
             },
