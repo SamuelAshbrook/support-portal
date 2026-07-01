@@ -55,6 +55,8 @@ export function CreateTicketForm() {
                 />
             </div>
 
+            <input type="file" name="attachments" multiple accept="image/jpeg,image/png,image/webp" />
+
             <select name="type" required defaultValue="FIX_PROBLEM">
                 <option value="FIX_PROBLEM">Fix a problem</option>
                 <option value="ASK_QUESTION">Ask a question</option>
