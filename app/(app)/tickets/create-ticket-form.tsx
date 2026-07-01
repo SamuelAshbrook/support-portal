@@ -55,6 +55,20 @@ export function CreateTicketForm() {
                 />
             </div>
 
+            <select name="type" required defaultValue="FIX_PROBLEM">
+                <option value="FIX_PROBLEM">Fix a problem</option>
+                <option value="ASK_QUESTION">Ask a question</option>
+                <option value="UPDATE_OR_ADD">Update or add something</option>
+                <option value="BILLING">Billing</option>
+            </select>
+
+            <select name="priority" required defaultValue="MEDIUM">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+            </select>
+
             <button
                 type="submit"
                 disabled={pending}
