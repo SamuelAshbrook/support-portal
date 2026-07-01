@@ -1,34 +1,70 @@
 "use server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
-import { auth } from "@/app/lib/auth";
 import { assertAdmin } from "@/app/lib/session";
-import { TicketStatus } from "@/app/generated/prisma/client";
+import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
+import { getSession } from "@/app/lib/session";
 
-export async function createTicket(formData: FormData) {
-    const session = await auth.api.getSession({ headers: await headers() });
+const MAX_TITLE = 200;
+const MAX_DESCRIPTION = 5000;
+
+export type CreateTicketState = {
+    error?: string;
+    success?: boolean;
+};
+
+export async function createTicket(
+    _prevState: CreateTicketState | null,
+    formData: FormData,
+): Promise<CreateTicketState> {
+    const session = await getSession();
     if (!session)
-        throw new Error("Unauthorized");
+        return { error: "You must be logged in to create a ticket" };
+
+    const user = session.user;
+
+    if (user.role !== "CLIENT")
+        return { error: "You must be a client to create a ticket" };
+
+    if (!user.companyId)
+        return { error: "You must be linked to a company to create a ticket" };
 
     const title = String(formData.get("title") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
-    if (!title || !description)
-        throw new Error("Title and description are required");
 
-    const companyId = session.user.companyId;
-    if (!companyId)
-        throw new Error("Account is not linked to a company");
+    if (!title) return { error: "Title is required" };
+    if (!description) return { error: "Description is required" };
+    if (title.length > MAX_TITLE) 
+        return { error: `Title must be ${MAX_TITLE} characters or less` };
+    if (description.length > MAX_DESCRIPTION)
+        return { error: `Description must be ${MAX_DESCRIPTION} characters or less` };
 
-    await prisma.ticket.create({
-        data: {
-            title,
-            description,
-            companyId,
-            createdById: session.user.id,
-        },
-    });
+    const type = String(formData.get("type"));
+    const priority = String(formData.get("priority"));
+
+    if(!Object.values(TicketType).includes(type as TicketType))
+        return { error: "Invalid ticket type" };
+
+    if(!Object.values(TicketPriority).includes(priority as TicketPriority))
+        return { error: "Invalid ticket priority" };
+    
+    try {
+        await prisma.ticket.create({
+            data: {
+                title,
+                description,
+                type: type as TicketType,
+                priority: priority as TicketPriority,
+                companyId: user.companyId,
+                createdById: user.id,
+            },
+        });
+    } catch {
+        return { error: "Something went wrong. Please try again." };
+    }
+
     revalidatePath("/tickets");
+    return { success: true };
 }
 
 export async function updateTicketStatus(formData: FormData) {
