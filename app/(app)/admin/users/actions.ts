@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/app/lib/auth";
 import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
+import { validatePassword } from "./password";
 
 export type CreateUserState = {
     error?: string;
@@ -37,6 +38,10 @@ export async function createClientUser(
 
     if (!name || !email || !password || !companyId)
         return { error: "All fields are required" };
+
+    const passwordError = validatePassword(password);
+    if (passwordError)
+        return { error: passwordError };
 
     if (await findUserByEmail(email))
         return { error: "User already exists" };

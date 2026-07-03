@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createClientUser, type CreateUserState } from "./actions";
 import { useUserEmailCheck } from "./use-user-email-check";
+import { PASSWORD_MAX, validatePassword } from "./password";
 
 type CompanyOption = {
     id: string;
@@ -11,6 +12,7 @@ type CompanyOption = {
 
 export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
     const formRef = useRef<HTMLFormElement>(null);
+    const [password, setPassword] = useState("");
     const { email, emailExists, checkingEmail, handleEmailChange, resetEmail } =
         useUserEmailCheck();
 
@@ -22,6 +24,7 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
         if (result.success) {
             formRef.current?.reset();
             resetEmail();
+            setPassword("");
         }
         return result;
     }
@@ -33,7 +36,13 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
 
     const showDuplicateMessage =
         email.trim().length > 0 && !checkingEmail && emailExists;
-    const canSubmit = !emailExists && !checkingEmail && !pending;
+    const passwordError = password.length > 0 ? validatePassword(password) : null;
+    const canSubmit =
+        !emailExists &&
+        !checkingEmail &&
+        !pending &&
+        password.length > 0 &&
+        passwordError === null;
 
     return (
         <form ref={formRef} action={formAction} className="grid max-w-md gap-2">
@@ -59,9 +68,18 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
                 type="password"
                 placeholder="Temp Password"
                 required
+                maxLength={PASSWORD_MAX}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 disabled={pending}
                 className="w-full rounded-md border border-zinc-300 p-2"
             />
+            <p className="text-xs text-red-500">
+                Min 8 characters, at least 1 number and 1 symbol.
+            </p>
+            {passwordError && (
+                <p className="text-sm text-red-600">{passwordError}</p>
+            )}
             <select
                 name="companyId"
                 required
