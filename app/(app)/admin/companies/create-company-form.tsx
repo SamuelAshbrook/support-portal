@@ -1,60 +1,26 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import {
-    checkCompanyNameExists,
-    createCompany,
-    type CreateCompanyState,
-} from "./actions";
-
-const DEBOUNCE_MS = 400;
+import { useActionState } from "react";
+import { createCompany, type CompanyActionState } from "./actions";
+import { useCompanyNameCheck } from "./use-company-name-check";
 
 export function CreateCompanyForm() {
-    const [name, setName] = useState("");
-    const [nameExists, setNameExists] = useState(false);
-    const [checkingName, setCheckingName] = useState(false);
+    const { name, nameExists, checkingName, handleNameChange, resetName } =
+        useCompanyNameCheck();
 
     async function submitCompany(
-        prevState: CreateCompanyState | null,
+        prevState: CompanyActionState | null,
         formData: FormData,
-    ): Promise<CreateCompanyState> {
+    ): Promise<CompanyActionState> {
         const result = await createCompany(prevState, formData);
-        if (result.success) {
-            setName("");
-            setNameExists(false);
-            setCheckingName(false);
-        }
+        if (result.success) resetName();
         return result;
     }
 
     const [state, formAction, pending] = useActionState<
-        CreateCompanyState | null,
+        CompanyActionState | null,
         FormData
     >(submitCompany, null);
-
-    function handleNameChange(value: string) {
-        setName(value);
-        const trimmed = value.trim();
-        if (!trimmed) {
-            setNameExists(false);
-            setCheckingName(false);
-            return;
-        }
-        setCheckingName(true);
-    }
-
-    useEffect(() => {
-        const trimmed = name.trim();
-        if (!trimmed) return;
-
-        const timer = window.setTimeout(async () => {
-            const exists = await checkCompanyNameExists(trimmed);
-            setNameExists(exists);
-            setCheckingName(false);
-        }, DEBOUNCE_MS);
-
-        return () => window.clearTimeout(timer);
-    }, [name]);
 
     const trimmedName = name.trim();
     const showDuplicateMessage =
