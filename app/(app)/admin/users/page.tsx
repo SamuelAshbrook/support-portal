@@ -1,5 +1,5 @@
 import prisma from "@/app/lib/prisma";
-import { createClientUser } from "./actions";
+import { CreateUserForm } from "./create-user-form";
 
 export default async function UsersPage() {
     const [companies, users] = await Promise.all([
@@ -14,20 +14,7 @@ export default async function UsersPage() {
         <div className="space-y-4">
             <h1 className="text-2xl font-bold">Users</h1>
 
-            <form action={createClientUser} className="grid max-w-md gap-2">
-                <input name="name" placeholder="Name" required className="w-full rounded-md border border-zinc-300 p-2" />
-                <input name="email" placeholder="Email" required className="w-full rounded-md border border-zinc-300 p-2" />
-                <input name="password" type="password" placeholder="Temp Password" className="w-full rounded-md border border-zinc-300 p-2" />
-                <select name="companyId" required className="w-full rounded-md border border-zinc-300 p-2">
-                    <option value="">Select Company</option>
-                    {companies.map((company) => (
-                        <option key={company.id} value={company.id}>{company.name}</option>
-                    ))}
-                </select>
-                <button className="w-full rounded-md bg-blue-500 text-white p-2">
-                    Create Client User
-                </button>
-            </form>
+            <CreateUserForm companies={companies} />
 
             <ul className="divide-y divide-zinc-200">
                 {users.map((user) => (
