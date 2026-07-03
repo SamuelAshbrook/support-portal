@@ -1,7 +1,12 @@
 import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
-import { createTicket } from "./actions";
+import { formatCreatedAgo, formatTicketDate } from "@/app/lib/format-date";
+import { User, Building2, Clock, Calendar } from 'lucide-react';
+import { formatExcerpt } from "@/app/lib/format-excerpt";
+import { getTicketStatusDisplay } from "@/app/lib/ticket-status";
+import { getTicketPriorityDisplay } from "@/app/lib/ticket-priority";
+import { CreateTicketForm } from "./create-ticket-form";
 
 export default async function TicketsPage() {
     const user = await requireUser();
@@ -21,38 +26,58 @@ export default async function TicketsPage() {
         <div className="space-y-4 p-6">
             <h1 className="text-2xl font-bold">Tickets</h1>
 
-            { ! isAdmin && (
-                <form action={createTicket} className="grid max-w-md gap-2">
-                    <input 
-                        name="title" 
-                        placeholder="Title"
-                        className="w-full rounded-md border border-zinc-300 p-2"
-                    />
-                    <textarea
-                        name="description"
-                        placeholder="Describe the issue"
-                        className="w-full rounded-md border border-zinc-300 p-2"
-                    />
-                    <button className="w-full rounded-md bg-blue-500 text-white p-2">Create Ticket</button>
-                </form>
-            )}
+            {!isAdmin && <CreateTicketForm />}
 
-            <ul className="divide-y divide-zinc-200">
-                {tickets.map((ticket) => (
-                <li key={ticket.id} className="p-4">
-                    <Link
-                    href={`/tickets/${ticket.id}`}
-                    className="font-medium hover:underline"
-                    >
-                    {ticket.title}
-                    </Link>
-                    <div className="text-sm text-zinc-500">
-                    {ticket.status}
-                    {isAdmin && ` · ${ticket.company.name}`}
-                    {` · ${ticket._count.messages} messages`}
-                    </div>
-                </li>
-                ))}
+            <ul className="flex flex-col gap-4 divide-y divide-zinc-200">
+                {tickets.map((ticket) => {
+                    const statusDisplay = getTicketStatusDisplay(ticket.status);
+                    const priorityDisplay = getTicketPriorityDisplay(ticket.priority);
+                    return (
+                        <li key={ticket.id} className="rounded-lg bg-white shadow-sm transition-colors border border-[#e3e5e8]">
+                            <Link
+                                href={`/tickets/${ticket.id}`}
+                                className="w-full h-full cursor-pointer block p-4"
+                            >
+                                <div className="flex justify-between">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        #{ticket.ticketNumber}
+                                        <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-medium ${priorityDisplay.className}`}>
+                                            {priorityDisplay.label}
+                                        </div>
+                                    </div>
+                                    <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusDisplay.className}`}>
+                                        {statusDisplay.label}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-1 text-sm text-zinc-500 mt-1">
+                                    <h3 className="text-base font-medium text-zinc-900">{ticket.title}</h3>
+                                    {formatExcerpt(ticket.description)}
+                                </div>
+                                <div className="flex gap-2 text-sm text-zinc-500 mt-3">
+                                    <div className="flex items-center gap-1">
+                                        <User className="size-4" />
+                                        {ticket.createdBy.name ?? ticket.createdBy.email}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Building2 className="size-4" />
+                                        {ticket.company.name}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Clock className="size-4" />
+                                        {formatCreatedAgo(ticket.createdAt)}
+                                    </div>
+                                    <span className="mx-2">•</span>
+                                    <div className="flex items-center gap-1">
+                                        <Calendar className="size-4" />
+                                        {formatTicketDate(ticket.createdAt)}
+                                    </div>
+                                </div>
+                            </Link>
+                        </li>
+                    )}
+                )}
             </ul>
         </div>
     );
