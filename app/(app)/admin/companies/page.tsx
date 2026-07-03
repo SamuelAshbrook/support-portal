@@ -1,5 +1,5 @@
 import prisma from "@/app/lib/prisma";
-import { createCompany } from "./actions";
+import { CreateCompanyForm } from "./create-company-form";
 
 export default async function CompaniesPage() {
     const companies = await prisma.company.findMany({
@@ -11,17 +11,7 @@ export default async function CompaniesPage() {
         <div className="space-y-4">
             <h1 className="text-2xl font-bold">Companies</h1>
 
-            <form action={createCompany} className="flex gap-2">
-                <input 
-                    type="text" 
-                    name="name" 
-                    placeholder="Company Name" 
-                    className="w-full rounded-md border border-zinc-300 p-2" 
-                />
-                <button className="w-full rounded-md bg-blue-500 text-white p-2">
-                    Create Company
-                </button>
-            </form>
+            <CreateCompanyForm />
 
             <ul className="divide-y divide-zinc-200 ">
                 {companies.map((company) => (
