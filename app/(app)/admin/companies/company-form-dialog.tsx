@@ -1,7 +1,14 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import {
+    useActionState,
+    useEffect,
+    useId,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import {
     createCompany,
@@ -31,6 +38,12 @@ const EMPTY_ADDRESS: CompanyAddressValues = {
     country: "",
 };
 
+const emptySubscribe = () => () => {};
+
+function useIsClient() {
+    return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
 type CompanyFormDialogProps = {
     open: boolean;
     onClose: () => void;
@@ -47,11 +60,7 @@ export function CompanyFormDialog({
     const dialogRef = useRef<HTMLDialogElement>(null);
     const titleId = useId();
     const formKey = initial?.id ?? "create";
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useIsClient();
 
     useEffect(() => {
         if (!open) return;
