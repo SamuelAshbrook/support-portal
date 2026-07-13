@@ -17,6 +17,7 @@ export const auth = betterAuth({
     user: {
         additionalFields: {
             companyId: { type: "string", required: false, input: false },
+            telephone: { type: "string", required: false, input: false },
         },
     },
     plugins: [
