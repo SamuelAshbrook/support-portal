@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { createClientUser, type CreateUserState } from "./actions";
+import { createClientUser, type UserActionState } from "./actions";
 import { useUserEmailCheck } from "./use-user-email-check";
 import { PASSWORD_MAX, validatePassword } from "./password";
 
@@ -17,9 +17,9 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
         useUserEmailCheck();
 
     async function submitUser(
-        prevState: CreateUserState | null,
+        prevState: UserActionState | null,
         formData: FormData,
-    ): Promise<CreateUserState> {
+    ): Promise<UserActionState> {
         const result = await createClientUser(prevState, formData);
         if (result.success) {
             formRef.current?.reset();
@@ -30,7 +30,7 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
     }
 
     const [state, formAction, pending] = useActionState<
-        CreateUserState | null,
+        UserActionState | null,
         FormData
     >(submitUser, null);
 

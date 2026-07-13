@@ -1,5 +1,6 @@
 import prisma from "@/app/lib/prisma";
 import { CreateUserForm } from "./create-user-form";
+import { UserListItem } from "./user-list-item";
 
 export default async function UsersPage() {
     const [companies, users] = await Promise.all([
@@ -18,12 +19,16 @@ export default async function UsersPage() {
 
             <ul className="divide-y divide-zinc-200">
                 {users.map((user) => (
-                    <li key={user.id} className="flex justify-between items-center p-4">
-                        <span>{user.name} - {user.email}</span>
-                        <span className="text-sm">
-                            {user.role} . {user.company?.name ?? "-"}
-                        </span>
-                    </li>
+                    <UserListItem
+                        key={user.id}
+                        id={user.id}
+                        name={user.name ?? ""}
+                        email={user.email}
+                        role={user.role}
+                        companyId={user.companyId}
+                        companyName={user.company?.name ?? null}
+                        companies={companies}
+                    />
                 ))}
             </ul>
         </div>

@@ -5,7 +5,17 @@ import { checkUserEmailExists } from "./actions";
 
 const DEBOUNCE_MS = 400;
 
-export function useUserEmailCheck(initialEmail = "") {
+type UseUserEmailCheckOptions = {
+    initialEmail?: string;
+    excludeUserId?: string;
+    enabled?: boolean;
+};
+
+export function useUserEmailCheck({
+    initialEmail = "",
+    excludeUserId,
+    enabled = true,
+}: UseUserEmailCheckOptions = {}) {
     const [email, setEmail] = useState(initialEmail);
     const [emailExists, setEmailExists] = useState(false);
     const [checkingEmail, setCheckingEmail] = useState(false);
@@ -28,17 +38,19 @@ export function useUserEmailCheck(initialEmail = "") {
     }
 
     useEffect(() => {
+        if (!enabled) return;
+
         const trimmed = email.trim();
         if (!trimmed) return;
 
         const timer = window.setTimeout(async () => {
-            const exists = await checkUserEmailExists(trimmed);
+            const exists = await checkUserEmailExists(trimmed, excludeUserId);
             setEmailExists(exists);
             setCheckingEmail(false);
         }, DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
-    }, [email]);
+    }, [email, excludeUserId, enabled]);
 
     return {
         email,
