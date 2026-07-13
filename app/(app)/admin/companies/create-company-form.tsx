@@ -18,7 +18,11 @@ const EMPTY_ADDRESS: CompanyAddressValues = {
     country: "",
 };
 
-export function CreateCompanyForm() {
+export function CreateCompanyForm({
+    onSuccess,
+}: {
+    onSuccess?: () => void;
+} = {}) {
     const formRef = useRef<HTMLFormElement>(null);
     const [billingRate, setBillingRate] = useState("");
     const [address, setAddress] = useState<CompanyAddressValues>(EMPTY_ADDRESS);
@@ -42,6 +46,7 @@ export function CreateCompanyForm() {
             resetName();
             setBillingRate("");
             setAddress(EMPTY_ADDRESS);
+            onSuccess?.();
         }
         return result;
     }
@@ -75,7 +80,7 @@ export function CreateCompanyForm() {
             <button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full max-w-md rounded-md bg-blue-500 p-2 text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-md bg-[#ee6b5d] p-2 text-white cursor-pointer hover:bg-[#e55a4c] disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {pending ? "Creating..." : "Create Company"}
             </button>
