@@ -22,6 +22,13 @@ export default async function CompaniesPage() {
                         key={company.id}
                         id={company.id}
                         name={company.name}
+                        addressLine1={company.addressLine1}
+                        addressLine2={company.addressLine2}
+                        townCity={company.townCity}
+                        countyState={company.countyState}
+                        postcodeZip={company.postcodeZip}
+                        country={company.country}
+                        billingRate={company.billingRate.toFixed(2)}
                         userCount={company._count.users}
                         ticketCount={company._count.tickets}
                         timesheetCount={company._count.timesheets}
