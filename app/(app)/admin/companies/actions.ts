@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
+import {
+    parseCompanyFormData,
+    validateCompanyFields,
+} from "./company-fields";
 
 export type CompanyActionState = {
     error?: string;
@@ -33,15 +37,15 @@ export async function createCompany(
     formData: FormData,
 ): Promise<CompanyActionState> {
     await assertAdmin();
-    const name = String(formData.get("name") ?? "").trim();
-    if (!name)
-        return { error: "Company name is required" };
 
-    if (await findCompanyByName(name))
+    const parsed = validateCompanyFields(parseCompanyFormData(formData));
+    if ("error" in parsed) return { error: parsed.error };
+
+    if (await findCompanyByName(parsed.data.name))
         return { error: "Company already exists" };
 
     try {
-        await prisma.company.create({ data: { name } });
+        await prisma.company.create({ data: parsed.data });
     } catch {
         return { error: "Company already exists" };
     }
@@ -56,22 +60,24 @@ export async function updateCompany(
 ): Promise<CompanyActionState> {
     await assertAdmin();
     const id = String(formData.get("id") ?? "").trim();
-    const name = String(formData.get("name") ?? "").trim();
+    if (!id) return { error: "Company not found" };
 
-    if (!id || !name)
-        return { error: "Company name is required" };
+    const parsed = validateCompanyFields(parseCompanyFormData(formData));
+    if ("error" in parsed) return { error: parsed.error };
 
     const company = await prisma.company.findUnique({ where: { id } });
-    if (!company)
-        return { error: "Company not found" };
+    if (!company) return { error: "Company not found" };
 
-    if (await findCompanyByName(name, id))
+    if (await findCompanyByName(parsed.data.name, id))
         return { error: "Company already exists" };
 
     try {
-        await prisma.company.update({ where: { id }, data: { name } });
+        await prisma.company.update({
+            where: { id },
+            data: parsed.data,
+        });
     } catch {
-        return { error: "Company already exists" };
+        return { error: "Could not update company" };
     }
 
     revalidatePath("/admin/companies");
@@ -84,8 +90,7 @@ export async function deleteCompany(
 ): Promise<CompanyActionState> {
     await assertAdmin();
     const id = String(formData.get("id") ?? "").trim();
-    if (!id)
-        return { error: "Company not found" };
+    if (!id) return { error: "Company not found" };
 
     const company = await prisma.company.findUnique({
         where: { id },
@@ -94,8 +99,7 @@ export async function deleteCompany(
         },
     });
 
-    if (!company)
-        return { error: "Company not found" };
+    if (!company) return { error: "Company not found" };
 
     if (
         company._count.users > 0 ||
