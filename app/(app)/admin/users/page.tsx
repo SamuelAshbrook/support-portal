@@ -24,6 +24,7 @@ export default async function UsersPage() {
                         id={user.id}
                         name={user.name ?? ""}
                         email={user.email}
+                        telephone={user.telephone ?? ""}
                         role={user.role}
                         companyId={user.companyId}
                         companyName={user.company?.name ?? null}

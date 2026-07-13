@@ -64,6 +64,14 @@ export function CreateUserForm({ companies }: { companies: CompanyOption[] }) {
                 className="w-full rounded-md border border-zinc-300 p-2"
             />
             <input
+                name="telephone"
+                type="tel"
+                placeholder="Telephone"
+                required
+                disabled={pending}
+                className="w-full rounded-md border border-zinc-300 p-2"
+            />
+            <input
                 name="password"
                 type="password"
                 placeholder="Temp Password"

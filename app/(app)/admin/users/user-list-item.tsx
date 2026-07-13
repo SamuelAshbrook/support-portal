@@ -13,6 +13,7 @@ type UserListItemProps = {
     id: string;
     name: string;
     email: string;
+    telephone: string;
     role: string;
     companyId: string | null;
     companyName: string | null;
@@ -23,6 +24,7 @@ export function UserListItem({
     id,
     name,
     email,
+    telephone,
     role,
     companyId,
     companyName,
@@ -30,6 +32,7 @@ export function UserListItem({
 }: UserListItemProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(name);
+    const [editTelephone, setEditTelephone] = useState(telephone);
     const [editCompanyId, setEditCompanyId] = useState(companyId ?? "");
     const {
         email: editEmail,
@@ -64,6 +67,7 @@ export function UserListItem({
 
     function startEditing() {
         setEditName(name);
+        setEditTelephone(telephone);
         setEditCompanyId(companyId ?? "");
         resetEmail(email);
         setIsEditing(true);
@@ -71,6 +75,7 @@ export function UserListItem({
 
     function cancelEditing() {
         setEditName(name);
+        setEditTelephone(telephone);
         setEditCompanyId(companyId ?? "");
         resetEmail(email);
         setIsEditing(false);
@@ -78,15 +83,18 @@ export function UserListItem({
 
     const trimmedName = editName.trim();
     const trimmedEmail = editEmail.trim();
+    const trimmedTelephone = editTelephone.trim();
     const unchanged =
         trimmedName === name.trim() &&
         trimmedEmail.toLowerCase() === email.trim().toLowerCase() &&
+        trimmedTelephone === telephone.trim() &&
         editCompanyId === (companyId ?? "");
     const showDuplicateMessage =
         isEditing && trimmedEmail.length > 0 && !checkingEmail && emailExists;
     const canSave =
         trimmedName.length > 0 &&
         trimmedEmail.length > 0 &&
+        trimmedTelephone.length > 0 &&
         editCompanyId.length > 0 &&
         !emailExists &&
         !checkingEmail &&
@@ -115,6 +123,18 @@ export function UserListItem({
                             handleEmailChange(event.target.value)
                         }
                         placeholder="Email"
+                        required
+                        disabled={updatePending}
+                        className="w-full rounded-md border border-zinc-300 p-2"
+                    />
+                    <input
+                        name="telephone"
+                        type="tel"
+                        value={editTelephone}
+                        onChange={(event) =>
+                            setEditTelephone(event.target.value)
+                        }
+                        placeholder="Telephone"
                         required
                         disabled={updatePending}
                         className="w-full rounded-md border border-zinc-300 p-2"
@@ -178,7 +198,7 @@ export function UserListItem({
                     {name} - {email}
                 </span>
                 <p className="text-sm text-zinc-500">
-                    {role} . {companyName ?? "-"}
+                    {telephone || "-"} . {role} . {companyName ?? "-"}
                 </p>
                 {deleteState?.error && (
                     <p className="text-sm text-red-600">{deleteState.error}</p>

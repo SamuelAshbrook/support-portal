@@ -39,10 +39,11 @@ export async function createClientUser(
 
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
+    const telephone = String(formData.get("telephone") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const companyId = String(formData.get("companyId") ?? "");
 
-    if (!name || !email || !password || !companyId)
+    if (!name || !email || !telephone || !password || !companyId)
         return { error: "All fields are required" };
 
     const passwordError = validatePassword(password);
@@ -59,7 +60,7 @@ export async function createClientUser(
                 email,
                 password,
                 role: "CLIENT",
-                data: { companyId },
+                data: { companyId, telephone },
             },
             headers: await headers(),
         });
@@ -80,12 +81,13 @@ export async function updateUser(
     const id = String(formData.get("id") ?? "").trim();
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
+    const telephone = String(formData.get("telephone") ?? "").trim();
     const companyId = String(formData.get("companyId") ?? "").trim();
 
     if (!id)
         return { error: "User not found" };
 
-    if (!name || !email || !companyId)
+    if (!name || !email || !telephone || !companyId)
         return { error: "All fields are required" };
 
     const existing = await prisma.user.findUnique({ where: { id } });
@@ -97,7 +99,7 @@ export async function updateUser(
 
     try {
         await auth.api.adminUpdateUser({
-            body: { userId: id, data: { name, email, companyId } },
+            body: { userId: id, data: { name, email, companyId, telephone } },
             headers: await headers(),
         });
     } catch {
