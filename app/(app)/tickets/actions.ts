@@ -7,6 +7,7 @@ import { getSession } from "@/app/lib/session";
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 5000;
+const MAX_MESSAGE = 5000;
 
 export type CreateTicketState = {
     error?: string;
@@ -64,6 +65,64 @@ export async function createTicket(
     }
 
     revalidatePath("/tickets");
+    return { success: true };
+}
+
+export type AddMessageState = {
+    error?: string;
+    success?: boolean;
+};
+
+export async function addMessage(
+    _prevState: AddMessageState | null,
+    formData: FormData,
+): Promise<AddMessageState> {
+    const session = await getSession();
+    if (!session)
+        return { error: "You must be logged in to send a message" };
+
+    const user = session.user;
+
+    const ticketId = String(formData.get("ticketId") ?? "").trim();
+    if (!ticketId)
+        return { error: "Ticket not found" };
+
+    const content = String(formData.get("content") ?? "").trim();
+    if (!content)
+        return { error: "Message cannot be empty" };
+    if (content.length > MAX_MESSAGE)
+        return { error: `Message must be ${MAX_MESSAGE} characters or less` };
+
+    const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true, companyId: true },
+    });
+
+    if (!ticket)
+        return { error: "Ticket not found" };
+
+    if (user.role !== "ADMIN" && ticket.companyId !== user.companyId)
+        return { error: "You do not have access to this ticket" };
+
+    try {
+        await prisma.$transaction([
+            prisma.ticketMessage.create({
+                data: {
+                    content,
+                    ticketId: ticket.id,
+                    senderId: user.id,
+                },
+            }),
+            prisma.ticket.update({
+                where: { id: ticket.id },
+                data: { updatedAt: new Date() },
+            }),
+        ]);
+    } catch {
+        return { error: "Something went wrong. Please try again." };
+    }
+
+    revalidatePath(`/tickets/${ticket.id}`);
     return { success: true };
 }
 
