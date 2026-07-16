@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
 import { updateTicketStatus } from "../actions";
+import { ReplyForm } from "./reply-form";
 
 export default async function TicketPage({
     params,
@@ -60,6 +61,7 @@ export default async function TicketPage({
                         <p className="whitespace-pre-wrap">{m.content}</p>
                     </div>
                 ))}
+                <ReplyForm ticketId={ticket.id} />
             </section>
       </div>
     );
