@@ -4,6 +4,7 @@ import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
 import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
+import { notifyAdminsNewTicket, notifyNewMessage, notifyTicketStatusChanged } from "@/app/lib/email/ticket-notifications";
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 5000;
@@ -49,8 +50,9 @@ export async function createTicket(
     if(!Object.values(TicketPriority).includes(priority as TicketPriority))
         return { error: "Invalid ticket priority" };
     
+    let ticket;
     try {
-        await prisma.ticket.create({
+        ticket = await prisma.ticket.create({
             data: {
                 title,
                 description,
@@ -59,9 +61,29 @@ export async function createTicket(
                 companyId: user.companyId,
                 createdById: user.id,
             },
+            include: {
+                company: { select: { name: true } },
+                createdBy: { select: { name: true, email: true } },
+            },
         });
     } catch {
         return { error: "Something went wrong. Please try again." };
+    }
+
+    try {
+        await notifyAdminsNewTicket({
+            id: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            title: ticket.title,
+            description: ticket.description,
+            type: ticket.type,
+            priority: ticket.priority,
+            companyName: ticket.company.name,
+            createdByName: ticket.createdBy.name,
+            createdByEmail: ticket.createdBy.email,
+        });
+    } catch {
+        console.error("[email] Failed to send new-ticket notification");
     }
 
     revalidatePath("/tickets");
@@ -95,7 +117,14 @@ export async function addMessage(
 
     const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
-        select: { id: true, companyId: true },
+        select: {
+            id: true,
+            companyId: true,
+            ticketNumber: true,
+            title: true,
+            company: { select: { name: true } },
+            createdBy: { select: { email: true } },
+        },
     });
 
     if (!ticket)
@@ -122,6 +151,24 @@ export async function addMessage(
         return { error: "Something went wrong. Please try again." };
     }
 
+    if (user.role === "ADMIN" || user.role === "CLIENT") {
+        try {
+            await notifyNewMessage({
+                ticketId: ticket.id,
+                ticketNumber: ticket.ticketNumber,
+                ticketTitle: ticket.title,
+                companyName: ticket.company.name,
+                createdByEmail: ticket.createdBy.email,
+                senderRole: user.role,
+                senderName: user.name ?? null,
+                senderEmail: user.email,
+                content,
+            });
+        } catch {
+            console.error("[email] Failed to send new-message notification");
+        }
+    }
+
     revalidatePath(`/tickets/${ticket.id}`);
     return { success: true };
 }
@@ -130,9 +177,50 @@ export async function updateTicketStatus(formData: FormData) {
     await assertAdmin();
     const id = String(formData.get("id"));
     const status = String(formData.get("status"));
-    if(!Object.values(TicketStatus).includes(status as TicketStatus)) {
+    if (!Object.values(TicketStatus).includes(status as TicketStatus)) {
         throw new Error("Invalid status");
     }
-    await prisma.ticket.update({ where: { id }, data: { status: status as TicketStatus } });
+
+    const ticket = await prisma.ticket.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            status: true,
+            ticketNumber: true,
+            title: true,
+            company: { select: { name: true } },
+            createdBy: { select: { email: true } },
+        },
+    });
+
+    if (!ticket) {
+        throw new Error("Ticket not found");
+    }
+
+    const nextStatus = status as TicketStatus;
+    if (ticket.status === nextStatus) {
+        revalidatePath(`/tickets/${id}`);
+        return;
+    }
+
+    await prisma.ticket.update({
+        where: { id },
+        data: { status: nextStatus },
+    });
+
+    try {
+        await notifyTicketStatusChanged({
+            ticketId: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            ticketTitle: ticket.title,
+            companyName: ticket.company.name,
+            createdByEmail: ticket.createdBy.email,
+            previousStatus: ticket.status,
+            newStatus: nextStatus,
+        });
+    } catch {
+        console.error("[email] Failed to send status-change notification");
+    }
+
     revalidatePath(`/tickets/${id}`);
 }
