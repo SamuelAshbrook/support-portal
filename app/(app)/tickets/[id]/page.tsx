@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import prisma from "@/app/lib/prisma";
 import { requireUser } from "@/app/lib/session";
+import { formatTicketDate } from "@/app/lib/format-date";
 import { updateTicketStatus } from "../actions";
+import { ReplyForm } from "./reply-form";
 
 export default async function TicketPage({
     params,
@@ -47,19 +49,57 @@ export default async function TicketPage({
                 </form>
             )}
             <p className="whitespace-pre-wrap">{ticket.description}</p>
-            <section className="space-y-2">
+            <section className="space-y-4">
                 <h2 className="font-semibold">Messages</h2>
-                {ticket.messages.length === 0 && (
-                    <p className="text-sm text-zinc-500">No messages yet.</p>
+
+                {ticket.messages.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
+                        No messages yet — start the conversation.
+                    </p>
+                ) : (
+                    <ul className="space-y-3">
+                        {ticket.messages.map((m) => {
+                            const isMine = m.senderId === user.id;
+                            const isAdmin = m.sender.role === "ADMIN";
+                            return (
+                                <li
+                                    key={m.id}
+                                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                                >
+                                    <div
+                                        className={`max-w-[80%] rounded-lg border p-3 ${
+                                            isMine
+                                                ? "border-[#f5c6bd] bg-[#fdeeec]"
+                                                : "border-zinc-200 bg-white"
+                                        }`}
+                                    >
+                                        <div className="mb-1 flex items-center gap-2 text-xs text-zinc-500">
+                                            <span className="font-medium text-zinc-700">
+                                                {m.sender.name ?? m.sender.email}
+                                            </span>
+                                            <span
+                                                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                                    isAdmin
+                                                        ? "bg-[#2d3252] text-white"
+                                                        : "bg-zinc-100 text-zinc-600"
+                                                }`}
+                                            >
+                                                {isAdmin ? "Admin" : "Client"}
+                                            </span>
+                                            <span>·</span>
+                                            <span>{formatTicketDate(m.createdAt)}</span>
+                                        </div>
+                                        <p className="whitespace-pre-wrap text-sm text-zinc-800">
+                                            {m.content}
+                                        </p>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 )}
-                {ticket.messages.map((m) => (
-                    <div key={m.id} className="rounded-md border border-zinc-200 p-3">
-                        <div className="text-xs text-zinc-500">
-                            {m.sender.name ?? m.sender.email}
-                        </div>
-                        <p className="whitespace-pre-wrap">{m.content}</p>
-                    </div>
-                ))}
+
+                <ReplyForm ticketId={ticket.id} />
             </section>
       </div>
     );
