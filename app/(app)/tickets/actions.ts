@@ -4,6 +4,7 @@ import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
 import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
+import { notifyAdminsNewTicket } from "@/app/lib/email/ticket-notifications";
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 5000;
@@ -49,8 +50,9 @@ export async function createTicket(
     if(!Object.values(TicketPriority).includes(priority as TicketPriority))
         return { error: "Invalid ticket priority" };
     
+    let ticket;
     try {
-        await prisma.ticket.create({
+        ticket = await prisma.ticket.create({
             data: {
                 title,
                 description,
@@ -59,9 +61,29 @@ export async function createTicket(
                 companyId: user.companyId,
                 createdById: user.id,
             },
+            include: {
+                company: { select: { name: true } },
+                createdBy: { select: { name: true, email: true } },
+            },
         });
     } catch {
         return { error: "Something went wrong. Please try again." };
+    }
+
+    try {
+        await notifyAdminsNewTicket({
+            id: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            title: ticket.title,
+            description: ticket.description,
+            type: ticket.type,
+            priority: ticket.priority,
+            companyName: ticket.company.name,
+            createdByName: ticket.createdBy.name,
+            createdByEmail: ticket.createdBy.email,
+        });
+    } catch {
+        console.error("[email] Failed to send new-ticket notification");
     }
 
     revalidatePath("/tickets");
