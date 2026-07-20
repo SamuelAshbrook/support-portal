@@ -4,7 +4,7 @@ import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
 import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
-import { notifyAdminsNewTicket, notifyNewMessage } from "@/app/lib/email/ticket-notifications";
+import { notifyAdminsNewTicket, notifyNewMessage, notifyTicketStatusChanged } from "@/app/lib/email/ticket-notifications";
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 5000;
@@ -177,9 +177,50 @@ export async function updateTicketStatus(formData: FormData) {
     await assertAdmin();
     const id = String(formData.get("id"));
     const status = String(formData.get("status"));
-    if(!Object.values(TicketStatus).includes(status as TicketStatus)) {
+    if (!Object.values(TicketStatus).includes(status as TicketStatus)) {
         throw new Error("Invalid status");
     }
-    await prisma.ticket.update({ where: { id }, data: { status: status as TicketStatus } });
+
+    const ticket = await prisma.ticket.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            status: true,
+            ticketNumber: true,
+            title: true,
+            company: { select: { name: true } },
+            createdBy: { select: { email: true } },
+        },
+    });
+
+    if (!ticket) {
+        throw new Error("Ticket not found");
+    }
+
+    const nextStatus = status as TicketStatus;
+    if (ticket.status === nextStatus) {
+        revalidatePath(`/tickets/${id}`);
+        return;
+    }
+
+    await prisma.ticket.update({
+        where: { id },
+        data: { status: nextStatus },
+    });
+
+    try {
+        await notifyTicketStatusChanged({
+            ticketId: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            ticketTitle: ticket.title,
+            companyName: ticket.company.name,
+            createdByEmail: ticket.createdBy.email,
+            previousStatus: ticket.status,
+            newStatus: nextStatus,
+        });
+    } catch {
+        console.error("[email] Failed to send status-change notification");
+    }
+
     revalidatePath(`/tickets/${id}`);
 }

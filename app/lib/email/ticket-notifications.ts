@@ -4,6 +4,8 @@ import {
     sendEmail,
     ticketUrl,
 } from "@/app/lib/email/resend";
+import { getTicketStatusDisplay } from "@/app/lib/ticket-status";
+import type { TicketStatus } from "@/app/generated/prisma/client";
 
 export type NewTicketNotificationInput = {
     id: string;
@@ -27,6 +29,16 @@ export type NewMessageNotificationInput = {
     senderName: string | null;
     senderEmail: string;
     content: string;
+};
+
+export type StatusChangedNotificationInput = {
+    ticketId: string;
+    ticketNumber: number;
+    ticketTitle: string;
+    companyName: string;
+    createdByEmail: string;
+    previousStatus: string;
+    newStatus: string;
 };
 
 function escapeHtml(value: string): string {
@@ -187,6 +199,69 @@ export async function notifyNewMessage(
         ],
         sectionLabel: "Message",
         sectionBody: excerpt,
+        url,
+    });
+
+    await sendEmail({ to, subject, text, html });
+}
+
+/**
+ * Emails the ticket author when an admin changes the ticket status.
+ */
+export async function notifyTicketStatusChanged(
+    input: StatusChangedNotificationInput,
+): Promise<void> {
+    const to = input.createdByEmail.trim() || null;
+    if (!to) {
+        console.warn(
+            "[email] Skipping status-change notification — no recipient available",
+        );
+        return;
+    }
+
+    const url = ticketUrl(input.ticketId);
+    const previousLabel = getTicketStatusDisplay(
+        input.previousStatus as TicketStatus,
+    ).label;
+    const newLabel = getTicketStatusDisplay(
+        input.newStatus as TicketStatus,
+    ).label;
+    const intro = `The status of your ticket was updated to ${newLabel}.`;
+    const subject = `[Ticket #${input.ticketNumber}] Status updated: ${input.ticketTitle}`;
+
+    const text = [
+        intro,
+        ``,
+        `Ticket: #${input.ticketNumber} — ${input.ticketTitle}`,
+        `Company: ${input.companyName}`,
+        `Previous status: ${previousLabel}`,
+        `New status: ${newLabel}`,
+        ``,
+        `View ticket: ${url}`,
+    ].join("\n");
+
+    const html = emailLayout({
+        intro,
+        rows: [
+            {
+                label: "Ticket",
+                valueHtml: `#${input.ticketNumber} — ${escapeHtml(input.ticketTitle)}`,
+            },
+            {
+                label: "Company",
+                valueHtml: escapeHtml(input.companyName),
+            },
+            {
+                label: "Previous",
+                valueHtml: escapeHtml(previousLabel),
+            },
+            {
+                label: "New status",
+                valueHtml: escapeHtml(newLabel),
+            },
+        ],
+        sectionLabel: "Update",
+        sectionBody: `Changed from ${previousLabel} to ${newLabel}.`,
         url,
     });
 
