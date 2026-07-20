@@ -48,8 +48,7 @@ export async function notifyAdminsNewTicket(
         `A new support ticket was created.`,
         ``,
         `Ticket: #${ticket.ticketNumber} — ${ticket.title}`,
-        `Company: ${ticket.companyName}`,
-        `Opened by: ${opener}`,
+        `Opened by: ${opener} (${ticket.companyName})`,
         `Type: ${ticket.type}`,
         `Priority: ${ticket.priority}`,
         ``,
@@ -60,16 +59,30 @@ export async function notifyAdminsNewTicket(
     ].join("\n");
 
     const html = `
-        <p>A new support ticket was created.</p>
-        <p></p>
-        <p><strong>Ticket:</strong> #${ticket.ticketNumber} — ${escapeHtml(ticket.title)}</p>
-        <p><strong>Opened by:</strong> ${escapeHtml(opener)} (${escapeHtml(ticket.companyName)})</p>
-        <p><strong>Type:</strong> ${escapeHtml(ticket.type)}</p>
-        <p><strong>Priority:</strong> ${escapeHtml(ticket.priority)}</p>
-        <p></p>
-        <p><strong>Description:</strong></p>
-        <p>${escapeHtml(excerpt)}</p>
-        <p><a href="${escapeHtml(url)}">View ticket</a></p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #18181b; max-width: 560px;">
+        <p style="margin: 0 0 20px;">A new support ticket was created.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="padding: 10px 14px; width: 112px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Ticket</td>
+            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">#${ticket.ticketNumber} — ${escapeHtml(ticket.title)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Opened by</td>
+            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">${escapeHtml(opener)} <span style="color: #71717a;">(${escapeHtml(ticket.companyName)})</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Type</td>
+            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">${escapeHtml(ticket.type)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; background: #fafafa; color: #71717a; font-size: 13px; font-weight: 600;">Priority</td>
+            <td style="padding: 10px 14px;">${escapeHtml(ticket.priority)}</td>
+          </tr>
+        </table>
+        <p style="margin: 20px 0 6px; color: #71717a; font-size: 13px; font-weight: 600;">Description</p>
+        <p style="margin: 0 0 24px; white-space: pre-wrap;">${escapeHtml(excerpt)}</p>
+        <a href="${escapeHtml(url)}" style="display: inline-block; background: #2d3252; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;">View ticket</a>
+      </div>
     `.trim();
 
     await sendEmail({ to, subject, text, html });
