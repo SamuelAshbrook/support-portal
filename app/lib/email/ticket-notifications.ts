@@ -2,6 +2,7 @@ import { formatExcerpt } from "@/app/lib/format-excerpt";
 import {
     getSupportInboxEmail,
     sendEmail,
+    ticketReplyToAddress,
     ticketUrl,
 } from "@/app/lib/email/resend";
 import { getTicketStatusDisplay } from "@/app/lib/ticket-status";
@@ -137,7 +138,13 @@ export async function notifyAdminsNewTicket(
         url,
     });
 
-    await sendEmail({ to, subject, text, html });
+    await sendEmail({
+        to,
+        subject,
+        text,
+        html,
+        replyTo: ticketReplyToAddress(ticket.id),
+    });
 }
 
 /**
@@ -202,7 +209,13 @@ export async function notifyNewMessage(
         url,
     });
 
-    await sendEmail({ to, subject, text, html });
+    await sendEmail({
+        to,
+        subject,
+        text,
+        html,
+        replyTo: ticketReplyToAddress(input.ticketId),
+    });
 }
 
 /**
@@ -265,5 +278,11 @@ export async function notifyTicketStatusChanged(
         url,
     });
 
-    await sendEmail({ to, subject, text, html });
+    await sendEmail({
+        to,
+        subject,
+        text,
+        html,
+        replyTo: ticketReplyToAddress(input.ticketId),
+    });
 }
