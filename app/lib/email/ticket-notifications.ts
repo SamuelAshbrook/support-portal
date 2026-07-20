@@ -17,12 +17,60 @@ export type NewTicketNotificationInput = {
     createdByEmail: string;
 };
 
+export type NewMessageNotificationInput = {
+    ticketId: string;
+    ticketNumber: number;
+    ticketTitle: string;
+    companyName: string;
+    createdByEmail: string;
+    senderRole: "ADMIN" | "CLIENT";
+    senderName: string | null;
+    senderEmail: string;
+    content: string;
+};
+
 function escapeHtml(value: string): string {
     return value
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;");
+}
+
+function metaRow(label: string, valueHtml: string, isLast = false): string {
+    const border = isLast ? "" : "border-bottom: 1px solid #e4e4e7;";
+    return `
+      <tr>
+        <td style="padding: 10px 14px; width: 112px; background: #fafafa; ${border} color: #71717a; font-size: 13px; font-weight: 600;">${escapeHtml(label)}</td>
+        <td style="padding: 10px 14px; ${border}">${valueHtml}</td>
+      </tr>
+    `.trim();
+}
+
+function emailLayout(options: {
+    intro: string;
+    rows: { label: string; valueHtml: string }[];
+    sectionLabel: string;
+    sectionBody: string;
+    url: string;
+}): string {
+    const rowsHtml = options.rows
+        .map((row, index) =>
+            metaRow(row.label, row.valueHtml, index === options.rows.length - 1),
+        )
+        .join("");
+
+    return `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #18181b; max-width: 560px;">
+        <p style="margin: 0 0 20px;">${escapeHtml(options.intro)}</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
+          ${rowsHtml}
+        </table>
+        <p style="margin: 20px 0 6px; color: #71717a; font-size: 13px; font-weight: 600;">${escapeHtml(options.sectionLabel)}</p>
+        <p style="margin: 0 0 24px; white-space: pre-wrap;">${escapeHtml(options.sectionBody)}</p>
+        <a href="${escapeHtml(options.url)}" style="display: inline-block; background: #2d3252; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;">View ticket</a>
+      </div>
+    `.trim();
 }
 
 /**
@@ -58,32 +106,89 @@ export async function notifyAdminsNewTicket(
         `View ticket: ${url}`,
     ].join("\n");
 
-    const html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #18181b; max-width: 560px;">
-        <p style="margin: 0 0 20px;">A new support ticket was created.</p>
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
-          <tr>
-            <td style="padding: 10px 14px; width: 112px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Ticket</td>
-            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">#${ticket.ticketNumber} — ${escapeHtml(ticket.title)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Opened by</td>
-            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">${escapeHtml(opener)} <span style="color: #71717a;">(${escapeHtml(ticket.companyName)})</span></td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #e4e4e7; color: #71717a; font-size: 13px; font-weight: 600;">Type</td>
-            <td style="padding: 10px 14px; border-bottom: 1px solid #e4e4e7;">${escapeHtml(ticket.type)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 14px; background: #fafafa; color: #71717a; font-size: 13px; font-weight: 600;">Priority</td>
-            <td style="padding: 10px 14px;">${escapeHtml(ticket.priority)}</td>
-          </tr>
-        </table>
-        <p style="margin: 20px 0 6px; color: #71717a; font-size: 13px; font-weight: 600;">Description</p>
-        <p style="margin: 0 0 24px; white-space: pre-wrap;">${escapeHtml(excerpt)}</p>
-        <a href="${escapeHtml(url)}" style="display: inline-block; background: #2d3252; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;">View ticket</a>
-      </div>
-    `.trim();
+    const html = emailLayout({
+        intro: "A new support ticket was created.",
+        rows: [
+            {
+                label: "Ticket",
+                valueHtml: `#${ticket.ticketNumber} — ${escapeHtml(ticket.title)}`,
+            },
+            {
+                label: "Opened by",
+                valueHtml: `${escapeHtml(opener)} <span style="color: #71717a;">(${escapeHtml(ticket.companyName)})</span>`,
+            },
+            { label: "Type", valueHtml: escapeHtml(ticket.type) },
+            { label: "Priority", valueHtml: escapeHtml(ticket.priority) },
+        ],
+        sectionLabel: "Description",
+        sectionBody: excerpt,
+        url,
+    });
+
+    await sendEmail({ to, subject, text, html });
+}
+
+/**
+ * Emails the other party when a message is added to a ticket.
+ * Client messages go to the shared support inbox; admin messages go to the ticket author.
+ */
+export async function notifyNewMessage(
+    input: NewMessageNotificationInput,
+): Promise<void> {
+    const to =
+        input.senderRole === "ADMIN"
+            ? input.createdByEmail.trim() || null
+            : getSupportInboxEmail();
+
+    if (!to) {
+        console.warn(
+            "[email] Skipping new-message notification — no recipient available",
+        );
+        return;
+    }
+
+    const url = ticketUrl(input.ticketId);
+    const sender = input.senderName ?? input.senderEmail;
+    const excerpt = formatExcerpt(input.content, 40);
+    const intro =
+        input.senderRole === "ADMIN"
+            ? "Support replied to your ticket."
+            : "A new message was added to a ticket.";
+    const subject = `[Ticket #${input.ticketNumber}] New reply: ${input.ticketTitle}`;
+
+    const text = [
+        intro,
+        ``,
+        `Ticket: #${input.ticketNumber} — ${input.ticketTitle}`,
+        `Company: ${input.companyName}`,
+        `From: ${sender}`,
+        ``,
+        `Message:`,
+        excerpt,
+        ``,
+        `View ticket: ${url}`,
+    ].join("\n");
+
+    const html = emailLayout({
+        intro,
+        rows: [
+            {
+                label: "Ticket",
+                valueHtml: `#${input.ticketNumber} — ${escapeHtml(input.ticketTitle)}`,
+            },
+            {
+                label: "Company",
+                valueHtml: escapeHtml(input.companyName),
+            },
+            {
+                label: "From",
+                valueHtml: escapeHtml(sender),
+            },
+        ],
+        sectionLabel: "Message",
+        sectionBody: excerpt,
+        url,
+    });
 
     await sendEmail({ to, subject, text, html });
 }

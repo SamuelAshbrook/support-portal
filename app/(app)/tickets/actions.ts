@@ -4,7 +4,7 @@ import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
 import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
-import { notifyAdminsNewTicket } from "@/app/lib/email/ticket-notifications";
+import { notifyAdminsNewTicket, notifyNewMessage } from "@/app/lib/email/ticket-notifications";
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 5000;
@@ -117,7 +117,14 @@ export async function addMessage(
 
     const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
-        select: { id: true, companyId: true },
+        select: {
+            id: true,
+            companyId: true,
+            ticketNumber: true,
+            title: true,
+            company: { select: { name: true } },
+            createdBy: { select: { email: true } },
+        },
     });
 
     if (!ticket)
@@ -142,6 +149,24 @@ export async function addMessage(
         ]);
     } catch {
         return { error: "Something went wrong. Please try again." };
+    }
+
+    if (user.role === "ADMIN" || user.role === "CLIENT") {
+        try {
+            await notifyNewMessage({
+                ticketId: ticket.id,
+                ticketNumber: ticket.ticketNumber,
+                ticketTitle: ticket.title,
+                companyName: ticket.company.name,
+                createdByEmail: ticket.createdBy.email,
+                senderRole: user.role,
+                senderName: user.name ?? null,
+                senderEmail: user.email,
+                content,
+            });
+        } catch {
+            console.error("[email] Failed to send new-message notification");
+        }
     }
 
     revalidatePath(`/tickets/${ticket.id}`);
