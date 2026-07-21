@@ -67,14 +67,24 @@ export function getSupportInboxEmail(): string | null {
 }
 
 export function getInboundDomain(): string | null {
-    return process.env.RESEND_INBOUND_DOMAIN?.trim().toLowerCase() || null;
+    const raw = process.env.RESEND_INBOUND_DOMAIN?.trim().toLowerCase();
+    if (!raw) return null;
+
+    const withoutMailto = raw.replace(/^mailto:/, "");
+    const at = withoutMailto.lastIndexOf("@");
+    const domain = (at >= 0 ? withoutMailto.slice(at + 1) : withoutMailto)
+        .replace(/^@+/, "")
+        .replace(/\/$/, "");
+
+    if (!domain || domain.includes("@")) return null;
+    return domain;
 }
 
 /** Reply-To address that maps an inbound reply back to a ticket. */
 export function ticketReplyToAddress(ticketId: string): string | undefined {
     const domain = getInboundDomain();
-    if (!domain) return undefined;
-    return `ticket+${ticketId}@${domain}`;
+    if (!domain || !ticketId.trim()) return undefined;
+    return `ticket+${ticketId.trim()}@${domain}`;
 }
 
 export function getAppUrl(): string {

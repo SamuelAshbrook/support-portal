@@ -66,12 +66,17 @@ function emailLayout(options: {
     sectionLabel: string;
     sectionBody: string;
     url: string;
+    replyHint?: string;
 }): string {
     const rowsHtml = options.rows
         .map((row, index) =>
             metaRow(row.label, row.valueHtml, index === options.rows.length - 1),
         )
         .join("");
+
+    const replyHintHtml = options.replyHint
+        ? `<p style="margin: 20px 0 0; color: #52525b; font-size: 13px; line-height: 1.5;">${escapeHtml(options.replyHint)}</p>`
+        : "";
 
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #18181b; max-width: 560px;">
@@ -82,8 +87,16 @@ function emailLayout(options: {
         <p style="margin: 20px 0 6px; color: #71717a; font-size: 13px; font-weight: 600;">${escapeHtml(options.sectionLabel)}</p>
         <p style="margin: 0 0 24px; white-space: pre-wrap;">${escapeHtml(options.sectionBody)}</p>
         <a href="${escapeHtml(options.url)}" style="display: inline-block; background: #2d3252; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;">View ticket</a>
+        ${replyHintHtml}
       </div>
     `.trim();
+}
+
+const REPLY_HINT =
+    "You can reply to this email to add a message to the ticket. You can also open the ticket in the portal using the button above.";
+
+function replyHintForTicket(ticketId: string): string | undefined {
+    return ticketReplyToAddress(ticketId) ? REPLY_HINT : undefined;
 }
 
 /**
@@ -104,6 +117,7 @@ export async function notifyAdminsNewTicket(
     const opener = ticket.createdByName ?? ticket.createdByEmail;
     const excerpt = formatExcerpt(ticket.description, 40);
     const subject = `[Ticket #${ticket.ticketNumber}] New ticket: ${ticket.title}`;
+    const replyHint = replyHintForTicket(ticket.id);
 
     const text = [
         `A new support ticket was created.`,
@@ -117,6 +131,7 @@ export async function notifyAdminsNewTicket(
         excerpt,
         ``,
         `View ticket: ${url}`,
+        ...(replyHint ? [``, replyHint] : []),
     ].join("\n");
 
     const html = emailLayout({
@@ -136,6 +151,7 @@ export async function notifyAdminsNewTicket(
         sectionLabel: "Description",
         sectionBody: excerpt,
         url,
+        replyHint,
     });
 
     await sendEmail({
@@ -169,6 +185,7 @@ export async function notifyNewMessage(
     const url = ticketUrl(input.ticketId);
     const sender = input.senderName ?? input.senderEmail;
     const excerpt = formatExcerpt(input.content, 40);
+    const replyHint = replyHintForTicket(input.ticketId);
     const intro =
         input.senderRole === "ADMIN"
             ? "Support replied to your ticket."
@@ -186,6 +203,7 @@ export async function notifyNewMessage(
         excerpt,
         ``,
         `View ticket: ${url}`,
+        ...(replyHint ? [``, replyHint] : []),
     ].join("\n");
 
     const html = emailLayout({
@@ -207,6 +225,7 @@ export async function notifyNewMessage(
         sectionLabel: "Message",
         sectionBody: excerpt,
         url,
+        replyHint,
     });
 
     await sendEmail({
@@ -239,6 +258,7 @@ export async function notifyTicketStatusChanged(
     const newLabel = getTicketStatusDisplay(
         input.newStatus as TicketStatus,
     ).label;
+    const replyHint = replyHintForTicket(input.ticketId);
     const intro = `The status of your ticket was updated to ${newLabel}.`;
     const subject = `[Ticket #${input.ticketNumber}] Status updated: ${input.ticketTitle}`;
 
@@ -251,6 +271,7 @@ export async function notifyTicketStatusChanged(
         `New status: ${newLabel}`,
         ``,
         `View ticket: ${url}`,
+        ...(replyHint ? [``, replyHint] : []),
     ].join("\n");
 
     const html = emailLayout({
@@ -276,6 +297,7 @@ export async function notifyTicketStatusChanged(
         sectionLabel: "Update",
         sectionBody: `Changed from ${previousLabel} to ${newLabel}.`,
         url,
+        replyHint,
     });
 
     await sendEmail({

@@ -42,10 +42,12 @@ export function parseTicketIdFromRecipients(
 export function extractReplyText(body: string): string {
     let text = body.replace(/\r\n/g, "\n").trim();
     const cutPatterns = [
-        /\nOn .+wrote:\n/i,
+        /\s+On\s+(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\w*,?.{0,200}?<[^>\n]+>\s*wrote:\s*/i,
+        /\nOn\s+.{0,200}?wrote:\s*\n/i,
         /\n-{2,} ?Original Message ?-{2,}/i,
-        /\nFrom: .+\nSent: /i,
+        /\nFrom:\s+.+\nSent:\s+/i,
         /\n_{2,}\n/,
+        /\n>+ /,
     ];
 
     for (const pattern of cutPatterns) {
