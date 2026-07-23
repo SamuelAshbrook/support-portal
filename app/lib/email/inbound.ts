@@ -79,7 +79,7 @@ async function resolveSenderUser(fromEmail: string) {
     const supportInbox = getSupportInboxEmail()?.toLowerCase();
     if (!supportInbox || supportInbox !== fromEmail) return null;
 
-    // Shared inbox reply with no matching user — attribute to an admin account.
+    // Shared inbox reply with no matching user - attribute to an admin account.
     return prisma.user.findFirst({
         where: { role: "ADMIN" },
         orderBy: { createdAt: "asc" },
@@ -143,7 +143,7 @@ export async function processInboundTicketEmail(input: {
 
     const sender = await resolveSenderUser(fromEmail);
     if (!sender || (sender.role !== "ADMIN" && sender.role !== "CLIENT")) {
-        console.warn("[email] Inbound reply ignored — unknown sender");
+        console.warn("[email] Inbound reply ignored - unknown sender");
         return { ok: false, reason: "unknown_sender" };
     }
 
@@ -164,7 +164,7 @@ export async function processInboundTicketEmail(input: {
     }
 
     if (sender.role !== "ADMIN" && ticket.companyId !== sender.companyId) {
-        console.warn("[email] Inbound reply ignored — sender lacks ticket access");
+        console.warn("[email] Inbound reply ignored - sender lacks ticket access");
         return { ok: false, reason: "unauthorized" };
     }
 

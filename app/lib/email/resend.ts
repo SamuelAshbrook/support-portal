@@ -33,7 +33,7 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
 
     if (!client || !from) {
         console.warn(
-            "[email] Skipping send — RESEND_API_KEY or RESEND_FROM_EMAIL is not set",
+            "[email] Skipping send - RESEND_API_KEY or RESEND_FROM_EMAIL is not set",
         );
         return false;
     }

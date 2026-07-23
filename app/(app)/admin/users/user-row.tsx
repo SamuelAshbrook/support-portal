@@ -36,16 +36,16 @@ export function UserRow({
         <>
             <tr className="border-b border-zinc-200 last:border-b-0">
                 <td className="px-6 py-5 align-middle text-sm font-semibold text-zinc-900">
-                    {name || "—"}
+                    {name || "-"}
                 </td>
                 <td className="px-6 py-5 align-middle text-sm text-zinc-500">
                     {email}
                 </td>
                 <td className="whitespace-nowrap px-6 py-5 align-middle text-sm text-zinc-500">
-                    {telephone || "—"}
+                    {telephone || "-"}
                 </td>
                 <td className="px-6 py-5 align-middle text-sm text-zinc-500">
-                    {companyName ?? "—"}
+                    {companyName ?? "-"}
                 </td>
                 <td className="px-6 py-5 align-middle">
                     <div className="flex items-center justify-end gap-3">

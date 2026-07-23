@@ -108,7 +108,7 @@ export async function notifyAdminsNewTicket(
     const to = getSupportInboxEmail();
     if (!to) {
         console.warn(
-            "[email] Skipping new-ticket notification — SUPPORT_INBOX_EMAIL is not set",
+            "[email] Skipping new-ticket notification - SUPPORT_INBOX_EMAIL is not set",
         );
         return;
     }
@@ -122,7 +122,7 @@ export async function notifyAdminsNewTicket(
     const text = [
         `A new support ticket was created.`,
         ``,
-        `Ticket: #${ticket.ticketNumber} — ${ticket.title}`,
+        `Ticket: #${ticket.ticketNumber} - ${ticket.title}`,
         `Opened by: ${opener} (${ticket.companyName})`,
         `Type: ${ticket.type}`,
         `Priority: ${ticket.priority}`,
@@ -139,7 +139,7 @@ export async function notifyAdminsNewTicket(
         rows: [
             {
                 label: "Ticket",
-                valueHtml: `#${ticket.ticketNumber} — ${escapeHtml(ticket.title)}`,
+                valueHtml: `#${ticket.ticketNumber} - ${escapeHtml(ticket.title)}`,
             },
             {
                 label: "Opened by",
@@ -177,7 +177,7 @@ export async function notifyNewMessage(
 
     if (!to) {
         console.warn(
-            "[email] Skipping new-message notification — no recipient available",
+            "[email] Skipping new-message notification - no recipient available",
         );
         return;
     }
@@ -195,7 +195,7 @@ export async function notifyNewMessage(
     const text = [
         intro,
         ``,
-        `Ticket: #${input.ticketNumber} — ${input.ticketTitle}`,
+        `Ticket: #${input.ticketNumber} - ${input.ticketTitle}`,
         `Company: ${input.companyName}`,
         `From: ${sender}`,
         ``,
@@ -211,7 +211,7 @@ export async function notifyNewMessage(
         rows: [
             {
                 label: "Ticket",
-                valueHtml: `#${input.ticketNumber} — ${escapeHtml(input.ticketTitle)}`,
+                valueHtml: `#${input.ticketNumber} - ${escapeHtml(input.ticketTitle)}`,
             },
             {
                 label: "Company",
@@ -246,7 +246,7 @@ export async function notifyTicketStatusChanged(
     const to = input.createdByEmail.trim() || null;
     if (!to) {
         console.warn(
-            "[email] Skipping status-change notification — no recipient available",
+            "[email] Skipping status-change notification - no recipient available",
         );
         return;
     }
@@ -265,7 +265,7 @@ export async function notifyTicketStatusChanged(
     const text = [
         intro,
         ``,
-        `Ticket: #${input.ticketNumber} — ${input.ticketTitle}`,
+        `Ticket: #${input.ticketNumber} - ${input.ticketTitle}`,
         `Company: ${input.companyName}`,
         `Previous status: ${previousLabel}`,
         `New status: ${newLabel}`,
@@ -279,7 +279,7 @@ export async function notifyTicketStatusChanged(
         rows: [
             {
                 label: "Ticket",
-                valueHtml: `#${input.ticketNumber} — ${escapeHtml(input.ticketTitle)}`,
+                valueHtml: `#${input.ticketNumber} - ${escapeHtml(input.ticketTitle)}`,
             },
             {
                 label: "Company",
