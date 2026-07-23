@@ -67,7 +67,7 @@ export function CompanyRow(props: CompanyRowProps) {
                     {name}
                 </td>
                 <td className="max-w-xl px-6 py-5 align-middle text-sm text-zinc-500">
-                    {address || "—"}
+                    {address || "-"}
                 </td>
                 <td className="whitespace-nowrap px-6 py-5 align-middle text-sm text-zinc-500">
                     {formatBillingRate(billingRate)}

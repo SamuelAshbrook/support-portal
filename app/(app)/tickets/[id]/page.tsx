@@ -54,7 +54,7 @@ export default async function TicketPage({
 
                 {ticket.messages.length === 0 ? (
                     <p className="rounded-md border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
-                        No messages yet — start the conversation.
+                        No messages yet - start the conversation.
                     </p>
                 ) : (
                     <ul className="space-y-3">
