@@ -6,8 +6,9 @@ import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma
 import { getSession } from "@/app/lib/session";
 import { notifyAdminsNewTicket, notifyNewMessage, notifyTicketStatusChanged } from "@/app/lib/email/ticket-notifications";
 
-const MAX_TITLE = 200;
-const MAX_DESCRIPTION = 5000;
+const MIN_TITLE = 3;
+const MAX_TITLE = 255;
+const MAX_DESCRIPTION = 10000;
 const MAX_MESSAGE = 5000;
 
 export type CreateTicketState = {
@@ -34,10 +35,11 @@ export async function createTicket(
     const title = String(formData.get("title") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
 
-    if (!title) return { error: "Title is required" };
-    if (!description) return { error: "Description is required" };
-    if (title.length > MAX_TITLE) 
-        return { error: `Title must be ${MAX_TITLE} characters or less` };
+    if (!title) return { error: "Subject is required" };
+    if (title.length < MIN_TITLE)
+        return { error: `Subject must be at least ${MIN_TITLE} characters` };
+    if (title.length > MAX_TITLE)
+        return { error: `Subject must be ${MAX_TITLE} characters or less` };
     if (description.length > MAX_DESCRIPTION)
         return { error: `Description must be ${MAX_DESCRIPTION} characters or less` };
 
@@ -86,6 +88,7 @@ export async function createTicket(
         console.error("[email] Failed to send new-ticket notification");
     }
 
+    revalidatePath("/");
     revalidatePath("/tickets");
     return { success: true };
 }
