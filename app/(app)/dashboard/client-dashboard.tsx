@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Ticket } from "lucide-react";
+import { FileText, Ticket } from "lucide-react";
 import type { ClientDashboardStats } from "@/app/lib/dashboard-stats";
 
 type ClientDashboardProps = {
   stats: ClientDashboardStats;
+  companyName: string | null;
 };
 
 const statusCards: {
@@ -33,7 +34,7 @@ const statusCards: {
   },
 ];
 
-export function ClientDashboard({ stats }: ClientDashboardProps) {
+export function ClientDashboard({ stats, companyName }: ClientDashboardProps) {
   return (
     <div className="min-h-full bg-[#f7f7f8] p-6 md:p-8">
       <header className="mb-6">
@@ -88,6 +89,30 @@ export function ClientDashboard({ stats }: ClientDashboardProps) {
         >
           + Create New Ticket
         </Link>
+      </section>
+
+      <section className="mt-4 rounded-lg border border-[#e8eaed] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+        <div className="mb-3 flex items-center gap-2">
+          <FileText
+            className="size-4 text-zinc-700"
+            strokeWidth={1.75}
+            aria-hidden
+          />
+          <h2 className="text-base font-semibold text-zinc-900">Timesheets</h2>
+        </div>
+        <p className="text-sm text-zinc-500">
+          {companyName
+            ? `View timesheets for ${companyName}`
+            : "View timesheets for your company"}
+        </p>
+        <button
+          type="button"
+          disabled
+          title="Coming soon"
+          className="mt-4 cursor-not-allowed rounded-md border border-[#e8eaed] bg-white px-4 py-2 text-sm font-medium text-zinc-300"
+        >
+          View Timesheets
+        </button>
       </section>
     </div>
   );

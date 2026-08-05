@@ -1,4 +1,5 @@
 import { requireUser } from "@/app/lib/session";
+import prisma from "@/app/lib/prisma";
 import {
   getClientDashboardStats,
   getDashboardStats,
@@ -15,6 +16,17 @@ export default async function Home() {
     return <DashboardView stats={stats} />;
   }
 
-  const stats = await getClientDashboardStats(user.companyId);
-  return <ClientDashboard stats={stats} />;
+  const [stats, company] = await Promise.all([
+    getClientDashboardStats(user.companyId),
+    user.companyId
+      ? prisma.company.findUnique({
+          where: { id: user.companyId },
+          select: { name: true },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  return (
+    <ClientDashboard stats={stats} companyName={company?.name ?? null} />
+  );
 }
