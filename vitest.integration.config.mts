@@ -6,9 +6,11 @@ const root = fileURLToPath(new URL("./", import.meta.url));
 export default defineConfig({
   test: {
     environment: "node",
-    // Explicit root avoids Windows drive-letter path mismatches (vitest#5251).
     root,
-    exclude: ["**/*.integration.test.ts", "node_modules"],
+    fileParallelism: false,
+    testTimeout: 30_000,
+    include: ["**/*.integration.test.ts"],
+    setupFiles: ["./tests/integration/setup-env.ts"],
   },
   resolve: {
     alias: {
