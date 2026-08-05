@@ -161,3 +161,33 @@ export async function getDashboardStats(
     daysInMonth: dayCount,
   };
 }
+
+export type ClientDashboardStats = {
+  open: number;
+  pending: number;
+  onHold: number;
+  resolved: number;
+};
+
+/** Company-scoped ticket counts for the client dashboard. */
+export async function getClientDashboardStats(
+  companyId: string | null | undefined,
+): Promise<ClientDashboardStats> {
+  const scope: Prisma.TicketWhereInput = {
+    companyId: companyId ?? "__none__",
+  };
+
+  const [open, pending, resolved] = await Promise.all([
+    prisma.ticket.count({ where: { ...scope, status: "OPEN" } }),
+    prisma.ticket.count({ where: { ...scope, status: "IN_PROGRESS" } }),
+    prisma.ticket.count({ where: { ...scope, status: "RESOLVED" } }),
+  ]);
+
+  return {
+    open,
+    pending,
+    // No on-hold status in schema yet — keep card for UI parity.
+    onHold: 0,
+    resolved,
+  };
+}

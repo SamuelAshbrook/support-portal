@@ -1,23 +1,20 @@
 import { requireUser } from "@/app/lib/session";
-import { getDashboardStats } from "@/app/lib/dashboard-stats";
+import {
+  getClientDashboardStats,
+  getDashboardStats,
+} from "@/app/lib/dashboard-stats";
+import { ClientDashboard } from "./dashboard/client-dashboard";
 import { DashboardView } from "./dashboard/dashboard-view";
 
 export default async function Home() {
   const user = await requireUser();
   const isAdmin = user.role === "ADMIN";
 
-  const stats = await getDashboardStats(
-    isAdmin ? undefined : (user.companyId ?? null),
-  );
+  if (isAdmin) {
+    const stats = await getDashboardStats();
+    return <DashboardView stats={stats} />;
+  }
 
-  return (
-    <DashboardView
-      stats={stats}
-      subtitle={
-        isAdmin
-          ? "Overview of your support desk"
-          : "Overview of your company's support desk"
-      }
-    />
-  );
+  const stats = await getClientDashboardStats(user.companyId);
+  return <ClientDashboard stats={stats} />;
 }
