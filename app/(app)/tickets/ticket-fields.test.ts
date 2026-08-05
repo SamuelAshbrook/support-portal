@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type CreateTicketFields,
   validateCreateTicketFields,
+  validateTicketMessageContent,
 } from "./ticket-fields";
 
 function fields(
@@ -46,6 +47,20 @@ describe("validateCreateTicketFields", () => {
   it("rejects a ticket with an unsupported type", () => {
     expect(validateCreateTicketFields(fields({ type: "Test" }))).toEqual({
       error: "Invalid ticket type",
+    });
+  });
+});
+
+describe("validateTicketMessageContent", () => {
+  it("rejects a ticket message that has only whitespace", () => {
+    expect(validateTicketMessageContent("   \t\n  ")).toEqual({
+      error: "Message cannot be empty",
+    });
+  });
+
+  it("rejects a ticket message with over 5000 characters", () => {
+    expect(validateTicketMessageContent("M".repeat(5001))).toEqual({
+      error: "Message must be 5000 characters or less",
     });
   });
 });

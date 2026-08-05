@@ -5,9 +5,7 @@ import { assertAdmin } from "@/app/lib/session";
 import { TicketStatus } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
 import { notifyAdminsNewTicket, notifyNewMessage, notifyTicketStatusChanged } from "@/app/lib/email/ticket-notifications";
-import { validateCreateTicketFields } from "./ticket-fields";
-
-const MAX_MESSAGE = 5000;
+import { validateCreateTicketFields, validateTicketMessageContent } from "./ticket-fields";
 
 export type CreateTicketState = {
     error?: string;
@@ -99,11 +97,11 @@ export async function addMessage(
     if (!ticketId)
         return { error: "Ticket not found" };
 
-    const content = String(formData.get("content") ?? "").trim();
-    if (!content)
-        return { error: "Message cannot be empty" };
-    if (content.length > MAX_MESSAGE)
-        return { error: `Message must be ${MAX_MESSAGE} characters or less` };
+    const parsed = validateTicketMessageContent(
+        String(formData.get("content") ?? ""),
+    );
+    if ("error" in parsed) return { error: parsed.error };
+    const content = parsed.data;
 
     const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },

@@ -5,6 +5,7 @@ import {
 
 export const MAX_TITLE = 200;
 export const MAX_DESCRIPTION = 5000;
+export const MAX_MESSAGE = 5000;
 
 export type CreateTicketFields = {
   title: string;
@@ -48,4 +49,15 @@ export function validateCreateTicketFields(
       priority: fields.priority as TicketPriority,
     },
   };
+}
+
+/** Returns an error message, or the trimmed message content. */
+export function validateTicketMessageContent(
+  content: string,
+): { error: string } | { data: string } {
+  const trimmed = content.trim();
+  if (!trimmed) return { error: "Message cannot be empty" };
+  if (trimmed.length > MAX_MESSAGE)
+    return { error: `Message must be ${MAX_MESSAGE} characters or less` };
+  return { data: trimmed };
 }
