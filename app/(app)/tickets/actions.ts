@@ -2,14 +2,10 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/app/lib/prisma";
 import { assertAdmin } from "@/app/lib/session";
-import { TicketStatus, TicketType, TicketPriority } from "@/app/generated/prisma/client";
+import { TicketStatus } from "@/app/generated/prisma/client";
 import { getSession } from "@/app/lib/session";
 import { notifyAdminsNewTicket, notifyNewMessage, notifyTicketStatusChanged } from "@/app/lib/email/ticket-notifications";
-
-const MIN_TITLE = 3;
-const MAX_TITLE = 255;
-const MAX_DESCRIPTION = 10000;
-const MAX_MESSAGE = 5000;
+import { validateCreateTicketFields, validateTicketMessageContent } from "./ticket-fields";
 
 export type CreateTicketState = {
     error?: string;
@@ -32,25 +28,15 @@ export async function createTicket(
     if (!user.companyId)
         return { error: "You must be linked to a company to create a ticket" };
 
-    const title = String(formData.get("title") ?? "").trim();
-    const description = String(formData.get("description") ?? "").trim();
+    const parsed = validateCreateTicketFields({
+        title: String(formData.get("title") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        type: String(formData.get("type")),
+        priority: String(formData.get("priority")),
+    });
+    if ("error" in parsed) return { error: parsed.error };
 
-    if (!title) return { error: "Subject is required" };
-    if (title.length < MIN_TITLE)
-        return { error: `Subject must be at least ${MIN_TITLE} characters` };
-    if (title.length > MAX_TITLE)
-        return { error: `Subject must be ${MAX_TITLE} characters or less` };
-    if (description.length > MAX_DESCRIPTION)
-        return { error: `Description must be ${MAX_DESCRIPTION} characters or less` };
-
-    const type = String(formData.get("type"));
-    const priority = String(formData.get("priority"));
-
-    if(!Object.values(TicketType).includes(type as TicketType))
-        return { error: "Invalid ticket type" };
-
-    if(!Object.values(TicketPriority).includes(priority as TicketPriority))
-        return { error: "Invalid ticket priority" };
+    const { title, description, type, priority } = parsed.data;
     
     let ticket;
     try {
@@ -58,8 +44,8 @@ export async function createTicket(
             data: {
                 title,
                 description,
-                type: type as TicketType,
-                priority: priority as TicketPriority,
+                type,
+                priority,
                 companyId: user.companyId,
                 createdById: user.id,
             },
@@ -112,11 +98,11 @@ export async function addMessage(
     if (!ticketId)
         return { error: "Ticket not found" };
 
-    const content = String(formData.get("content") ?? "").trim();
-    if (!content)
-        return { error: "Message cannot be empty" };
-    if (content.length > MAX_MESSAGE)
-        return { error: `Message must be ${MAX_MESSAGE} characters or less` };
+    const parsed = validateTicketMessageContent(
+        String(formData.get("content") ?? ""),
+    );
+    if ("error" in parsed) return { error: parsed.error };
+    const content = parsed.data;
 
     const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
