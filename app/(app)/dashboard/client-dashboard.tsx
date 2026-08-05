@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { FileText, Ticket } from "lucide-react";
 import type { ClientDashboardStats } from "@/app/lib/dashboard-stats";
+import { CreateTicketButton } from "../tickets/create-ticket-button";
 
 type ClientDashboardProps = {
   stats: ClientDashboardStats;
@@ -83,12 +83,11 @@ export function ClientDashboard({ stats, companyName }: ClientDashboardProps) {
             Create a new support ticket and our team will assist you
           </p>
         </div>
-        <Link
-          href="/tickets"
-          className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#E9426F] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#d63663]"
-        >
-          + Create New Ticket
-        </Link>
+        <CreateTicketButton
+          label="+ Create New Ticket"
+          showIcon={false}
+          className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-[#E9426F] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#d63663]"
+        />
       </section>
 
       <section className="mt-4 rounded-lg border border-[#e8eaed] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
