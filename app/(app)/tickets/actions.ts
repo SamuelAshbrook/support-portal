@@ -74,6 +74,7 @@ export async function createTicket(
         console.error("[email] Failed to send new-ticket notification");
     }
 
+    revalidatePath("/");
     revalidatePath("/tickets");
     return { success: true };
 }
